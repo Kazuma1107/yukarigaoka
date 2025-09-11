@@ -1,46 +1,32 @@
 const fetch = require("node-fetch");
 
 exports.handler = async function(event, context) {
-  const headers = {
-    "Access-Control-Allow-Origin": "https://yukarigaoka.netlify.app",
-    "Access-Control-Allow-Headers": "Content-Type",
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS"
-  };
-
-  if (event.httpMethod === "OPTIONS") {
-    return { statusCode: 204, headers, body: "" };
-  }
-
   try {
-    const recordIdsParam = event.queryStringParameters.recordIds;
-    if (!recordIdsParam) return { statusCode: 400, headers, body: JSON.stringify({ error: "recordIds is required" }) };
+    const recordIds = event.queryStringParameters.recordIds
+      ? event.queryStringParameters.recordIds.split(",").map(id => Number(id))
+      : [];
 
-    const recordIds = recordIdsParam.split(",").map(id => Number(id));
-    const results = [];
+    if (!recordIds.length) return { statusCode: 400, body: "recordIds is required" };
+
+    let fileKeys = [];
 
     for (const id of recordIds) {
       const resp = await fetch(`https://${process.env.KINTONE_SUBDOMAIN}.cybozu.com/k/v1/record.json?app=${process.env.KINTONE_IMAGE_APP_ID}&id=${id}`, {
         headers: {
-          "X-Cybozu-API-Token": process.env.KINTONE_IMAGE_API_TOKEN
+          "X-Cybozu-API-Token": process.env.KINTONE_IMAGE_API_TOKEN,
+          "Content-Type": "application/json"
         }
       });
-
-      if (!resp.ok) {
-        const text = await resp.text();
-        // レコード取得失敗でも処理続行
-        results.push({ recordId: id, fileKeys: [], error: text });
-        continue;
+      const record = await resp.json();
+     
+      if (record.record && record.record["写真"]) {
+        const files = record.record["写真"].value || [];
+        fileKeys.push(...files.map(f => f.fileKey));
       }
-
-      const data = await resp.json();
-      const fieldCode = "写真"; // kintone のフィールドコードに合わせる
-      const fileKeys = (data.record[fieldCode]?.value || []).map(f => f.fileKey);
-      results.push({ recordId: id, fileKeys });
     }
 
-    return { statusCode: 200, headers, body: JSON.stringify(results) };
-
+    return { statusCode: 200, body: JSON.stringify({ fileKeys }) };
   } catch (err) {
-    return { statusCode: 500, headers, body: JSON.stringify({ error: err.message }) };
+    return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
   }
 };
