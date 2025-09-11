@@ -5,28 +5,21 @@
   <title>kintone連携テスト</title>
 </head>
 <body>
-  <!-- -----------------------------
-       氏名登録フォーム
-  ----------------------------- -->
   <h2>氏名登録フォーム</h2>
   <form id="myForm">
     <label>氏名: <input type="text" id="name" required></label>
     <button type="submit">確認</button>
   </form>
 
-  <!-- -----------------------------
-       画像・PDF表示
-  ----------------------------- -->
   <h2>画像・PDF表示</h2>
   <div id="files"></div>
 
   <script>
     // -----------------------------
-    // 氏名登録フォーム送信
+    // 氏名登録フォーム
     // -----------------------------
     document.getElementById("myForm").addEventListener("submit", async (e) => {
       e.preventDefault();
-
       const name = document.getElementById("name").value;
       if (!name) return;
 
@@ -50,31 +43,42 @@
     });
 
     // -----------------------------
-    // 画像・PDF表示
+    // 画像・PDF表示（デバッグ強化版）
     // -----------------------------
     async function loadFiles(recordIds = [1]) {
       try {
         const resp = await fetch(
           `https://yukarigaoka.netlify.app/.netlify/functions/getImage?recordIds=${recordIds.join(",")}`
         );
+
         if (!resp.ok) throw new Error("getImage関数でエラー");
 
-        const { fileKeys } = await resp.json();
+        const data = await resp.json();
+        console.log("getImageの返却データ:", data);
+
+        const fileKeys = Array.isArray(data.fileKeys) ? data.fileKeys : [];
+        console.log("fileKeys:", fileKeys);
 
         const container = document.getElementById("files");
         container.innerHTML = "";
 
+        if (fileKeys.length === 0) {
+          container.textContent = "画像・PDFが見つかりませんでした。";
+          return;
+        }
+
         for (const key of fileKeys) {
           try {
+            console.log("getFileを呼ぶ fileKey:", key);
             const fileResp = await fetch(
               `https://yukarigaoka.netlify.app/.netlify/functions/getFile?fileKey=${key}`
             );
+
             if (!fileResp.ok) throw new Error("getFile関数でエラー");
 
             const base64 = await fileResp.text();
 
             let element;
-            // PDFの場合
             if (key.toLowerCase().endsWith(".pdf")) {
               element = document.createElement("a");
               element.href = `data:application/pdf;base64,${base64}`;
@@ -83,7 +87,6 @@
               element.style.display = "block";
               element.style.margin = "5px 0";
             } else {
-              // 画像の場合
               element = document.createElement("img");
               element.src = `data:image/png;base64,${base64}`;
               element.style.maxWidth = "200px";
@@ -99,7 +102,7 @@
       }
     }
 
-    // 表示したいレコードIDを指定（複数可）
+    // 表示したいレコードIDを指定
     loadFiles([1,2,3,4]);
   </script>
 </body>
