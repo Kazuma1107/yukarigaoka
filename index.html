@@ -47,39 +47,55 @@
     // 画像・PDF表示
     // -----------------------------
     async function loadFiles(recordIds = [1]) {
-      const resp = await fetch(`https://yukarigaoka.netlify.app/.netlify/functions/getImage?recordIds=${recordIds.join(",")}`);
-      const { fileKeys } = await resp.json();
+      try {
+        const resp = await fetch(
+          `https://yukarigaoka.netlify.app/.netlify/functions/getImage?recordIds=${recordIds.join(",")}`
+        );
 
-      const container = document.getElementById("files");
-      container.innerHTML = "";
+        if (!resp.ok) throw new Error("getImage関数でエラー");
 
-      for (const key of fileKeys) {
-        try {
-          const fileResp = await fetch(`https://yukarigaoka.netlify.app/.netlify/functions/getFile?fileKey=${key}`);
-          const base64 = await fileResp.text();
+        const { fileKeys } = await resp.json();
 
-          // ここでは拡張子を仮定（png/jpg/pdf）
-          let element;
-          if (key.endsWith(".pdf")) {
-            element = document.createElement("a");
-            element.href = `data:application/pdf;base64,${base64}`;
-            element.textContent = key;
-            element.target = "_blank";
-          } else {
-            element = document.createElement("img");
-            element.src = `data:image/png;base64,${base64}`;
-            element.style.maxWidth = "200px";
-            element.style.margin = "5px";
+        const container = document.getElementById("files");
+        container.innerHTML = "";
+
+        for (const key of fileKeys) {
+          try {
+            const fileResp = await fetch(
+              `https://yukarigaoka.netlify.app/.netlify/functions/getFile?fileKey=${key}`
+            );
+
+            if (!fileResp.ok) throw new Error("getFile関数でエラー");
+
+            const base64 = await fileResp.text();
+
+            // 拡張子で判定
+            let element;
+            if (key.toLowerCase().endsWith(".pdf")) {
+              element = document.createElement("a");
+              element.href = `data:application/pdf;base64,${base64}`;
+              element.textContent = key;
+              element.target = "_blank";
+              element.style.display = "block";
+              element.style.margin = "5px 0";
+            } else {
+              element = document.createElement("img");
+              element.src = `data:image/png;base64,${base64}`;
+              element.style.maxWidth = "200px";
+              element.style.margin = "5px";
+            }
+            container.appendChild(element);
+          } catch (err) {
+            console.error("ファイル取得エラー:", key, err);
           }
-          container.appendChild(element);
-        } catch (err) {
-          console.error("ファイル取得エラー:", key, err);
         }
+      } catch (err) {
+        console.error("ファイル一覧取得エラー:", err);
       }
     }
 
     // 表示したいレコードIDを指定
-    loadFiles([1,2,3,4]);
+    loadFiles([1,2,3,4]); // ここを変えれば他のレコードも表示可能
   </script>
 </body>
 </html>
