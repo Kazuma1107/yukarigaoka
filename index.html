@@ -12,97 +12,70 @@
   </form>
 
   <h2>画像・PDF表示</h2>
-  <div id="files"></div>
+  <div id="files">読み込み中…</div>
 
   <script>
-    // -----------------------------
-    // 氏名登録フォーム
-    // -----------------------------
     document.getElementById("myForm").addEventListener("submit", async (e) => {
       e.preventDefault();
       const name = document.getElementById("name").value;
       if (!name) return;
 
       try {
-        const resp = await fetch("https://yukarigaoka.netlify.app/.netlify/functions/save", {
+        const resp = await fetch("/.netlify/functions/save", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ name })
         });
-
-        if (resp.ok) {
-          alert("kintoneに保存しました！");
-          document.getElementById("myForm").reset();
-        } else {
-          const msg = await resp.text();
-          alert("エラー: " + msg);
-        }
+        if (resp.ok) alert("kintoneに保存しました！");
+        else alert("エラー: " + await resp.text());
+        document.getElementById("myForm").reset();
       } catch (err) {
         alert("通信エラー: " + err.message);
       }
     });
 
-    // -----------------------------
-    // 画像・PDF表示（デバッグ強化版）
-    // -----------------------------
-    async function loadFiles(recordIds = [1]) {
+    async function loadFiles(recordIds = [1,2,3,4]) {
+      const container = document.getElementById("files");
+      container.innerHTML = "";
+
       try {
-        const resp = await fetch(
-          `https://yukarigaoka.netlify.app/.netlify/functions/getImage?recordIds=${recordIds.join(",")}`
-        );
+        const resp = await fetch(`/.netlify/functions/getImage?recordIds=${recordIds.join(",")}`);
+        const { fileKeys } = await resp.json();
 
-        if (!resp.ok) throw new Error("getImage関数でエラー");
-
-        const data = await resp.json();
-        console.log("getImageの返却データ:", data);
-
-        const fileKeys = Array.isArray(data.fileKeys) ? data.fileKeys : [];
-        console.log("fileKeys:", fileKeys);
-
-        const container = document.getElementById("files");
-        container.innerHTML = "";
-
-        if (fileKeys.length === 0) {
+        if (!fileKeys.length) {
           container.textContent = "画像・PDFが見つかりませんでした。";
           return;
         }
 
         for (const key of fileKeys) {
           try {
-            console.log("getFileを呼ぶ fileKey:", key);
-            const fileResp = await fetch(
-              `https://yukarigaoka.netlify.app/.netlify/functions/getFile?fileKey=${key}`
-            );
-
-            if (!fileResp.ok) throw new Error("getFile関数でエラー");
-
+            const fileResp = await fetch(`/.netlify/functions/getFile?fileKey=${key}`);
             const base64 = await fileResp.text();
 
-            let element;
+            let el;
             if (key.toLowerCase().endsWith(".pdf")) {
-              element = document.createElement("a");
-              element.href = `data:application/pdf;base64,${base64}`;
-              element.textContent = key;
-              element.target = "_blank";
-              element.style.display = "block";
-              element.style.margin = "5px 0";
+              el = document.createElement("a");
+              el.href = `data:application/pdf;base64,${base64}`;
+              el.textContent = key;
+              el.target = "_blank";
+              el.style.display = "block";
             } else {
-              element = document.createElement("img");
-              element.src = `data:image/png;base64,${base64}`;
-              element.style.maxWidth = "200px";
-              element.style.margin = "5px";
+              el = document.createElement("img");
+              el.src = `data:image/jpeg;base64,${base64}`; // jpeg/png共通で表示
+              el.style.maxWidth = "200px";
+              el.style.margin = "5px";
             }
-            container.appendChild(element);
+            container.appendChild(el);
           } catch (err) {
-            console.error("ファイル取得エラー:", key, err);
+            console.error("ファイル取得エラー", key, err);
           }
         }
       } catch (err) {
-        console.error("ファイル一覧取得エラー:", err);
+        container.textContent = "画像一覧取得でエラーが発生しました";
+        console.error(err);
       }
     }
 
-    // 表示したいレコードIDを指定
     loadFiles([1,2,3,4]);
   </script>
 </body>
