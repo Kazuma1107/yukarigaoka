@@ -34,12 +34,12 @@
       }
     });
 
-    async function loadFiles(recordIds = [1,2,3,4]) {
+    async function loadFiles() {
       const container = document.getElementById("files");
       container.innerHTML = "";
 
       try {
-        const resp = await fetch(`/.netlify/functions/getImage?recordIds=${recordIds.join(",")}`);
+        const resp = await fetch(`/.netlify/functions/getImage?recordIds=1`);
         const { fileKeys } = await resp.json();
 
         if (!fileKeys.length) {
@@ -61,7 +61,7 @@
               el.style.display = "block";
             } else {
               el = document.createElement("img");
-              el.src = `data:image/jpeg;base64,${base64}`; // jpeg/png共通で表示
+              el.src = `data:image/jpeg;base64,${base64}`;
               el.style.maxWidth = "200px";
               el.style.margin = "5px";
             }
@@ -76,7 +76,8 @@
       }
     }
 
-    loadFiles([1,2,3,4]);
+    // レコード番号1のみ表示
+    loadFiles();
   </script>
 </body>
 </html>
