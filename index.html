@@ -7,7 +7,7 @@
 <body>
   <h2>氏名登録フォーム</h2>
   <form id="myForm">
-    <label>氏名: <input type="text" id="name"></label>
+    <label>氏名: <input type="text" id="name" required></label>
     <button type="submit">確認</button>
   </form>
 
@@ -16,7 +16,7 @@
       e.preventDefault();
       const name = document.getElementById("name").value;
 
-      const resp = await fetch("https://あなたのサイト.netlify.app/.netlify/functions/save", {
+      const resp = await fetch("https://yukarigaoka.netlify.app/.netlify/functions/save", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name })
@@ -24,6 +24,7 @@
 
       if (resp.ok) {
         alert("kintoneに保存しました！");
+        document.getElementById("myForm").reset();
       } else {
         const msg = await resp.text();
         alert("エラー: " + msg);
