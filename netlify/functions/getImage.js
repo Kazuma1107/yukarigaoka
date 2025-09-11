@@ -24,11 +24,11 @@ exports.handler = async function(event, context) {
 
       const record = await resp.json();
 
-      // フィールドコード「写真」に対応
       if (record.record && record.record["photo"]) {
-        const files = record.record["photo"].value || [];
-        fileKeys.push(...files.map(f => f.fileKey));
-      }
+    const files = record.record["photo"].value || [];
+    fileKeys.push(...files.map(f => f.fileKey));
+}
+
     }
 
     return { statusCode: 200, body: JSON.stringify({ fileKeys }) };
