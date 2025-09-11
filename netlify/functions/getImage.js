@@ -2,6 +2,7 @@ const fetch = require("node-fetch");
 
 exports.handler = async function(event, context) {
   try {
+    // クエリから recordIds を取得
     const recordIds = event.queryStringParameters.recordIds
       ? event.queryStringParameters.recordIds.split(",").map(id => Number(id))
       : [];
@@ -11,14 +12,19 @@ exports.handler = async function(event, context) {
     let fileKeys = [];
 
     for (const id of recordIds) {
-      const resp = await fetch(`https://${process.env.KINTONE_SUBDOMAIN}.cybozu.com/k/v1/record.json?app=${process.env.KINTONE_IMAGE_APP_ID}&id=${id}`, {
-        headers: {
-          "X-Cybozu-API-Token": process.env.KINTONE_IMAGE_API_TOKEN,
-          "Content-Type": "application/json"
+      const resp = await fetch(
+        `https://${process.env.KINTONE_SUBDOMAIN}.cybozu.com/k/v1/record.json?app=${process.env.KINTONE_IMAGE_APP_ID}&id=${id}`,
+        {
+          headers: {
+            "X-Cybozu-API-Token": process.env.KINTONE_IMAGE_API_TOKEN,
+            "Content-Type": "application/json"
+          }
         }
-      });
+      );
+
       const record = await resp.json();
-     
+
+      // フィールドコード「写真」に対応
       if (record.record && record.record["写真"]) {
         const files = record.record["写真"].value || [];
         fileKeys.push(...files.map(f => f.fileKey));
