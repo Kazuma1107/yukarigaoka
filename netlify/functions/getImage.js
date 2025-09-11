@@ -25,8 +25,8 @@ exports.handler = async function(event, context) {
       const record = await resp.json();
 
       // フィールドコード「写真」に対応
-      if (record.record && record.record["写真"]) {
-        const files = record.record["写真"].value || [];
+      if (record.record && record.record["photo"]) {
+        const files = record.record["photo"].value || [];
         fileKeys.push(...files.map(f => f.fileKey));
       }
     }
