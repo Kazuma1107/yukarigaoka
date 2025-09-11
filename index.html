@@ -5,24 +5,18 @@
   <title>kintone連携テスト</title>
 </head>
 <body>
-  <!-- -----------------------------
-       氏名登録フォーム
-  ----------------------------- -->
   <h2>氏名登録フォーム</h2>
   <form id="myForm">
     <label>氏名: <input type="text" id="name" required></label>
     <button type="submit">確認</button>
   </form>
 
-  <!-- -----------------------------
-       画像・ファイル表示エリア
-  ----------------------------- -->
-  <h2>画像・ファイル表示</h2>
-  <div id="photos"></div>
+  <h2>画像・PDF表示</h2>
+  <div id="files"></div>
 
   <script>
     // -----------------------------
-    // 氏名登録フォーム処理
+    // 氏名登録フォーム
     // -----------------------------
     document.getElementById("myForm").addEventListener("submit", async (e) => {
       e.preventDefault();
@@ -50,43 +44,42 @@
     });
 
     // -----------------------------
-    // 複数レコードの画像・ファイル取得
+    // 画像・PDF表示
     // -----------------------------
-    async function loadFiles(recordIds) {
+    async function loadFiles(recordIds = [1]) {
       const resp = await fetch(`https://yukarigaoka.netlify.app/.netlify/functions/getImage?recordIds=${recordIds.join(",")}`);
-      const records = await resp.json();
+      const { fileKeys } = await resp.json();
 
-      const container = document.getElementById("photos");
+      const container = document.getElementById("files");
       container.innerHTML = "";
 
-      for (const record of records) {
-        const fileKeys = record.fileKeys || []; // undefined 対策
+      for (const key of fileKeys) {
+        try {
+          const fileResp = await fetch(`https://yukarigaoka.netlify.app/.netlify/functions/getFile?fileKey=${key}`);
+          const base64 = await fileResp.text();
 
-        for (const key of fileKeys) {
-          if (!key) continue; // undefined をスキップ
-
-          try {
-            const fileResp = await fetch(`https://yukarigaoka.netlify.app/.netlify/functions/getFile?fileKey=${key}`);
-            const base64 = await fileResp.text();
-            if (!base64) continue;
-
-            const img = document.createElement("img");
-            img.src = `data:image/png;base64,${base64}`;
-            img.style.maxWidth = "200px";
-            img.style.margin = "5px";
-            container.appendChild(img);
-
-          } catch (err) {
-            console.error("ファイル取得エラー:", err);
+          // ここでは拡張子を仮定（png/jpg/pdf）
+          let element;
+          if (key.endsWith(".pdf")) {
+            element = document.createElement("a");
+            element.href = `data:application/pdf;base64,${base64}`;
+            element.textContent = key;
+            element.target = "_blank";
+          } else {
+            element = document.createElement("img");
+            element.src = `data:image/png;base64,${base64}`;
+            element.style.maxWidth = "200px";
+            element.style.margin = "5px";
           }
+          container.appendChild(element);
+        } catch (err) {
+          console.error("ファイル取得エラー:", key, err);
         }
       }
     }
 
-    // -----------------------------
     // 表示したいレコードIDを指定
-    // -----------------------------
-    loadFiles([1, 2, 3, 4]); // ここを必要に応じて変更
+    loadFiles([1,2,3,4]);
   </script>
 </body>
 </html>
