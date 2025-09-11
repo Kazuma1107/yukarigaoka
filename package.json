@@ -1,0 +1,9 @@
+{
+  "name": "yukarigaoka",
+  "version": "1.0.0",
+  "description": "Netlify Functions for kintone integration",
+  "main": "index.js",
+  "dependencies": {
+    "node-fetch": "^2.6.12"
+  }
+}
