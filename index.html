@@ -13,21 +13,28 @@
 
   <script>
     document.getElementById("myForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
+      e.preventDefault(); // ページリロード防止
+
       const name = document.getElementById("name").value;
+      if (!name) return; // 念のため空欄チェック
 
-      const resp = await fetch("https://yukarigaoka.netlify.app/.netlify/functions/save", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name })
-      });
+      try {
+        const resp = await fetch("https://yukarigaoka.netlify.app/.netlify/functions/save", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name })
+        });
 
-      if (resp.ok) {
-        alert("kintoneに保存しました！");
-        document.getElementById("myForm").reset();
-      } else {
-        const msg = await resp.text();
-        alert("エラー: " + msg);
+        if (resp.ok) {
+          alert("kintoneに保存しました！");
+          document.getElementById("myForm").reset(); // フォームリセット
+        } else {
+          const msg = await resp.text();
+          alert("エラー: " + msg);
+        }
+
+      } catch (err) {
+        alert("通信エラー: " + err.message);
       }
     });
   </script>
