@@ -5,22 +5,27 @@
   <title>kintone連携テスト</title>
 </head>
 <body>
+  <!-- -----------------------------
+       氏名登録フォーム（そのまま残す）
+       ----------------------------- -->
   <h2>氏名登録フォーム</h2>
   <form id="myForm">
     <label>氏名: <input type="text" id="name" required></label>
     <button type="submit">確認</button>
   </form>
 
-  <h2>画像表示</h2>
-  <div id="photos"></div> <!-- ここに画像を表示 -->
+  <!-- -----------------------------
+       画像/PDF表示
+       ----------------------------- -->
+  <h2>ファイル表示</h2>
+  <div id="files"></div>
 
   <script>
     // -----------------------------
-    // 氏名登録フォーム
+    // 氏名登録フォームの処理（そのまま）
     // -----------------------------
     document.getElementById("myForm").addEventListener("submit", async (e) => {
       e.preventDefault();
-
       const name = document.getElementById("name").value;
       if (!name) return;
 
@@ -44,29 +49,47 @@
     });
 
     // -----------------------------
-    // 画像表示
+    // 画像/PDF表示の処理
     // -----------------------------
-    async function loadImages(recordId) {
-      const resp = await fetch(`https://yukarigaoka.netlify.app/.netlify/functions/getImage?recordId=${recordId}`);
-      const { fileKeys } = await resp.json();
+    async function loadFiles(recordIds) {
+      const resp = await fetch(`https://yukarigaoka.netlify.app/.netlify/functions/getImage?recordIds=${recordIds.join(",")}`);
+      const records = await resp.json();
 
-      const container = document.getElementById("photos");
+      const container = document.getElementById("files");
       container.innerHTML = "";
 
-      for (const key of fileKeys) {
-        const fileResp = await fetch(`https://yukarigaoka.netlify.app/.netlify/functions/getFile?fileKey=${key}`);
-        const base64 = await fileResp.text();
+      for (const record of records) {
+        for (const key of record.fileKeys) {
+          const fileResp = await fetch(`https://yukarigaoka.netlify.app/.netlify/functions/getFile?fileKey=${key}`);
+          const { base64, name, contentType } = await fileResp.json();
 
-        const img = document.createElement("img");
-        img.src = `data:image/png;base64,${base64}`;
-        img.style.maxWidth = "200px"; // 表示サイズ調整
-        img.style.margin = "5px";
-        container.appendChild(img);
+          if (contentType.startsWith("image/")) {
+            const img = document.createElement("img");
+            img.src = `data:${contentType};base64,${base64}`;
+            img.style.maxWidth = "200px";
+            img.style.margin = "5px";
+            container.appendChild(img);
+          } else if (contentType === "application/pdf") {
+            const embed = document.createElement("embed");
+            embed.src = `data:application/pdf;base64,${base64}`;
+            embed.type = "application/pdf";
+            embed.width = "400px";
+            embed.height = "500px";
+            embed.style.margin = "5px";
+            container.appendChild(embed);
+          } else {
+            const link = document.createElement("a");
+            link.href = `data:${contentType};base64,${base64}`;
+            link.textContent = name || "ダウンロード";
+            link.download = name || "file";
+            container.appendChild(link);
+          }
+        }
       }
     }
 
-   // 1,2,3,4 レコードの画像を表示
-loadImages([1,2,3,4]);
+    // 例: レコード1,2,3,4のファイルを表示
+    loadFiles([1,2,3,4]);
   </script>
 </body>
 </html>
