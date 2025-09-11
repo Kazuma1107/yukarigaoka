@@ -24,10 +24,13 @@ exports.handler = async function(event, context) {
 
       const record = await resp.json();
 
+      // ここに追加
+      console.log(`Record ${id}:`, JSON.stringify(record, null, 2));
+       
       if (record.record && record.record["photo"]) {
-    const files = record.record["photo"].value || [];
-    fileKeys.push(...files.map(f => f.fileKey));
-}
+        const files = record.record["photo"].value || [];
+        fileKeys.push(...files.map(f => f.fileKey));
+       }
 
     }
 
