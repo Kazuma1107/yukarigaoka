@@ -11,12 +11,18 @@
     <button type="submit">確認</button>
   </form>
 
+  <h2>画像表示</h2>
+  <div id="photos"></div> <!-- ここに画像を表示 -->
+
   <script>
+    // -----------------------------
+    // 氏名登録フォーム
+    // -----------------------------
     document.getElementById("myForm").addEventListener("submit", async (e) => {
-      e.preventDefault(); // ページリロード防止
+      e.preventDefault();
 
       const name = document.getElementById("name").value;
-      if (!name) return; // 念のため空欄チェック
+      if (!name) return;
 
       try {
         const resp = await fetch("https://yukarigaoka.netlify.app/.netlify/functions/save", {
@@ -27,16 +33,40 @@
 
         if (resp.ok) {
           alert("kintoneに保存しました！");
-          document.getElementById("myForm").reset(); // フォームリセット
+          document.getElementById("myForm").reset();
         } else {
           const msg = await resp.text();
           alert("エラー: " + msg);
         }
-
       } catch (err) {
         alert("通信エラー: " + err.message);
       }
     });
+
+    // -----------------------------
+    // 画像表示
+    // -----------------------------
+    async function loadImages(recordId) {
+      const resp = await fetch(`https://yukarigaoka.netlify.app/.netlify/functions/getImage?recordId=${recordId}`);
+      const { fileKeys } = await resp.json();
+
+      const container = document.getElementById("photos");
+      container.innerHTML = "";
+
+      for (const key of fileKeys) {
+        const fileResp = await fetch(`https://yukarigaoka.netlify.app/.netlify/functions/getFile?fileKey=${key}`);
+        const base64 = await fileResp.text();
+
+        const img = document.createElement("img");
+        img.src = `data:image/png;base64,${base64}`;
+        img.style.maxWidth = "200px"; // 表示サイズ調整
+        img.style.margin = "5px";
+        container.appendChild(img);
+      }
+    }
+
+    // 表示したいレコードIDを指定
+    loadImages(1);
   </script>
 </body>
 </html>
