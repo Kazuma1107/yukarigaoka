@@ -5,18 +5,24 @@
   <title>kintone連携テスト</title>
 </head>
 <body>
+  <!-- -----------------------------
+       氏名登録フォーム
+  ----------------------------- -->
   <h2>氏名登録フォーム</h2>
   <form id="myForm">
     <label>氏名: <input type="text" id="name" required></label>
     <button type="submit">確認</button>
   </form>
 
+  <!-- -----------------------------
+       画像・PDF表示
+  ----------------------------- -->
   <h2>画像・PDF表示</h2>
   <div id="files"></div>
 
   <script>
     // -----------------------------
-    // 氏名登録フォーム
+    // 氏名登録フォーム送信
     // -----------------------------
     document.getElementById("myForm").addEventListener("submit", async (e) => {
       e.preventDefault();
@@ -51,7 +57,6 @@
         const resp = await fetch(
           `https://yukarigaoka.netlify.app/.netlify/functions/getImage?recordIds=${recordIds.join(",")}`
         );
-
         if (!resp.ok) throw new Error("getImage関数でエラー");
 
         const { fileKeys } = await resp.json();
@@ -64,13 +69,12 @@
             const fileResp = await fetch(
               `https://yukarigaoka.netlify.app/.netlify/functions/getFile?fileKey=${key}`
             );
-
             if (!fileResp.ok) throw new Error("getFile関数でエラー");
 
             const base64 = await fileResp.text();
 
-            // 拡張子で判定
             let element;
+            // PDFの場合
             if (key.toLowerCase().endsWith(".pdf")) {
               element = document.createElement("a");
               element.href = `data:application/pdf;base64,${base64}`;
@@ -79,6 +83,7 @@
               element.style.display = "block";
               element.style.margin = "5px 0";
             } else {
+              // 画像の場合
               element = document.createElement("img");
               element.src = `data:image/png;base64,${base64}`;
               element.style.maxWidth = "200px";
@@ -94,8 +99,8 @@
       }
     }
 
-    // 表示したいレコードIDを指定
-    loadFiles([1,2,3,4]); // ここを変えれば他のレコードも表示可能
+    // 表示したいレコードIDを指定（複数可）
+    loadFiles([1,2,3,4]);
   </script>
 </body>
 </html>
